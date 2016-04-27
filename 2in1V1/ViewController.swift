@@ -7,19 +7,135 @@
 //
 
 import UIKit
+import CoreLocation
+import CoreBluetooth
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralManagerDelegate {
 
+    @IBOutlet weak var incomingUUID: UILabel!
+    @IBOutlet weak var incomingMajor: UILabel!
+    @IBOutlet weak var incomingMinor: UILabel!
+    @IBOutlet weak var incomingRSSI: UILabel!
+    @IBOutlet weak var transmitting: UILabel!
+    @IBOutlet weak var outgoingUUID: UILabel!
+    @IBOutlet weak var outgoingMajor: UILabel!
+    @IBOutlet weak var outgoingMinor: UILabel!
+    
+    let locationManager = CLLocationManager()
+    let region = CLBeaconRegion(proximityUUID: NSUUID(UUIDString: "E2C56DB5-DFFB-48D2-B060-D0F5A71096E0")!, identifier: "MySmartDoor")
+    
+    var localBeacon: CLBeaconRegion!
+    var beaconPeripheralData: NSDictionary!
+    var peripheralManager: CBPeripheralManager!
+    var isBroadcasting = false
+    var beaconTimer: NSTimer!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+        locationManager.delegate = self;
+        locationManager.startRangingBeaconsInRegion(region)
+        locationManager.requestAlwaysAuthorization()
     }
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    func locationManager(manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], inRegion region: CLBeaconRegion) {
+        
+        let beacon = beacons[0]
+        updateInterface(beacons)
+        print(beacon.proximityUUID)
+//        if beacon.proximityUUID == self.region {
+//            transmitBeacon()
+//            print("trying to transmit")
+//        }
+//        else {
+//            stopLocalBeacon()
+//            print("trying to turn off")
+//        }
+//        if beacon.rssi > -60 {
+//            runThroughCycle(2)
+//            beaconTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: #selector(ViewController.resetBeacon), userInfo: nil, repeats: false)
+//        }
+    }
+    
+    func updateInterface(beacons: [CLBeacon]){
+        let newBeacon = beacons[0]
+        self.incomingUUID.text = "\(newBeacon.proximityUUID)"
+        self.incomingMajor.text = "\(newBeacon.major)"
+        self.incomingMinor.text = "\(newBeacon.minor)"
+        self.incomingRSSI.text = "\(newBeacon.rssi)"
+        
     }
 
+    func initLocalBeacon(minorNum : Int) {
+        if localBeacon != nil {
+            stopLocalBeacon()
+        }
+        
+        let localBeaconUUID = "66dae67d-22e2-466b-b7d6-7093d52ceeb7"
+        let localBeaconMajor: CLBeaconMajorValue = 8127
+        let localBeaconMinor: CLBeaconMinorValue = UInt16(minorNum)
+        
+        let uuid = NSUUID(UUIDString: localBeaconUUID)!
+        localBeacon = CLBeaconRegion(proximityUUID: uuid, major: localBeaconMajor, minor: localBeaconMinor, identifier: "MySmartDoor")
+        
+        beaconPeripheralData = localBeacon.peripheralDataWithMeasuredPower(nil)
+        peripheralManager = CBPeripheralManager(delegate: self, queue: nil, options: nil)
+    }
+    
+    func stopLocalBeacon() {
+        peripheralManager.stopAdvertising()
+        peripheralManager = nil
+        beaconPeripheralData = nil
+        localBeacon = nil
+        isBroadcasting = false
+    }
+    
+    func peripheralManagerDidUpdateState(peripheral: CBPeripheralManager) {
+        if peripheral.state == .PoweredOn {
+            peripheralManager.startAdvertising(beaconPeripheralData as! [String: AnyObject]!)
+            transmitting.text = "Yes!"
+        } else if peripheral.state == .PoweredOff {
+            peripheralManager.stopAdvertising()
+            transmitting.text = "No"
+        }
+    }
+    
+//    func updateOutgoingInterface(minorNum: Int){
+//        
+//        let localBeaconUUID = "66dae67d-22e2-466b-b7d6-7093d52ceeb7"
+//        let localBeaconMajor: CLBeaconMajorValue = 8127
+//        let localBeaconMinor: CLBeaconMinorValue = UInt16(minorNum)
+//        
+//        self.outgoingUUID.text = "\(localBeaconUUID)"
+//        self.outgoingMajor.text = "\(localBeaconMajor)"
+//        self.outgoingMinor.text = "\(localBeaconMinor)"
+//    }
+    
+    func runThroughCycle(minorNum : Int) {
+        stopLocalBeacon()
+        initLocalBeacon(minorNum)
+        isBroadcasting = true
+//        updateOutgoingInterface(minorNum)
+    }
+    
+    func resetBeacon(){
+        runThroughCycle(1)
+    }
+    
+//    func transmitBeacon() {
+//        if !isBroadcasting {
+//            initLocalBeacon(1)
+//            isBroadcasting = true
+//            updateOutgoingInterface(1)
+//        }
+//        else {
+//            stopLocalBeacon()
+//            isBroadcasting = false
+//        }
+//    }
 
+    @IBAction func unlock(sender: AnyObject) {
+        runThroughCycle(2)
+        beaconTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: #selector(ViewController.resetBeacon), userInfo: nil, repeats: false)
+    }
 }
 
