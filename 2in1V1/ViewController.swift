@@ -42,18 +42,19 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
         let beacon = beacons[0]
         updateInterface(beacons)
         print(beacon.proximityUUID)
-//        if beacon.proximityUUID == self.region {
-//            transmitBeacon()
-//            print("trying to transmit")
-//        }
-//        else {
-//            stopLocalBeacon()
-//            print("trying to turn off")
-//        }
-//        if beacon.rssi > -60 {
-//            runThroughCycle(2)
-//            beaconTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: #selector(ViewController.resetBeacon), userInfo: nil, repeats: false)
-//        }
+        print("this is region", self.region.proximityUUID)
+        if beacon.proximityUUID == self.region.proximityUUID {
+            transmitBeacon()
+            print("trying to transmit")
+        }
+        else if (self.isBroadcasting == true) {
+            stopLocalBeacon()
+            print("trying to turn off")
+        }
+        if beacon.rssi > -60 {
+            runThroughCycle(2)
+            beaconTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: #selector(ViewController.resetBeacon), userInfo: nil, repeats: false)
+        }
     }
     
     func updateInterface(beacons: [CLBeacon]){
@@ -99,39 +100,39 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
         }
     }
     
-//    func updateOutgoingInterface(minorNum: Int){
-//        
-//        let localBeaconUUID = "66dae67d-22e2-466b-b7d6-7093d52ceeb7"
-//        let localBeaconMajor: CLBeaconMajorValue = 8127
-//        let localBeaconMinor: CLBeaconMinorValue = UInt16(minorNum)
-//        
-//        self.outgoingUUID.text = "\(localBeaconUUID)"
-//        self.outgoingMajor.text = "\(localBeaconMajor)"
-//        self.outgoingMinor.text = "\(localBeaconMinor)"
-//    }
+    func updateOutgoingInterface(minorNum: Int){
+        
+        let localBeaconUUID = "66dae67d-22e2-466b-b7d6-7093d52ceeb7"
+        let localBeaconMajor: CLBeaconMajorValue = 8127
+        let localBeaconMinor: CLBeaconMinorValue = UInt16(minorNum)
+        
+        self.outgoingUUID.text = "\(localBeaconUUID)"
+        self.outgoingMajor.text = "\(localBeaconMajor)"
+        self.outgoingMinor.text = "\(localBeaconMinor)"
+    }
     
     func runThroughCycle(minorNum : Int) {
         stopLocalBeacon()
         initLocalBeacon(minorNum)
         isBroadcasting = true
-//        updateOutgoingInterface(minorNum)
+        updateOutgoingInterface(minorNum)
     }
     
     func resetBeacon(){
         runThroughCycle(1)
     }
     
-//    func transmitBeacon() {
-//        if !isBroadcasting {
-//            initLocalBeacon(1)
-//            isBroadcasting = true
-//            updateOutgoingInterface(1)
-//        }
-//        else {
-//            stopLocalBeacon()
-//            isBroadcasting = false
-//        }
-//    }
+    func transmitBeacon() {
+        if !isBroadcasting {
+            initLocalBeacon(1)
+            isBroadcasting = true
+            updateOutgoingInterface(1)
+        }
+        else {
+            stopLocalBeacon()
+            isBroadcasting = false
+        }
+    }
 
     @IBAction func unlock(sender: AnyObject) {
         runThroughCycle(2)
