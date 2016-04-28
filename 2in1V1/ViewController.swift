@@ -39,24 +39,32 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
     }
 
     func locationManager(manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], inRegion region: CLBeaconRegion) {
-        
-        let beacon = beacons[0]
-        updateInterface(beacons)
-        
-        if beacon.proximityUUID == self.region.proximityUUID && !isBroadcasting && !needToWait {
-            transmitBeacon()
-            print("trying to transmit")
+        if beacons.count != 0 {
+            let beacon = beacons[0]
+            updateInterface(beacons)
+            print("beacon ID", beacon.proximityUUID)
+            print("isBroadcasting", isBroadcasting)
+            
+            if beacon.proximityUUID == self.region.proximityUUID && !isBroadcasting && !needToWait {
+                transmitBeacon()
+                print("trying to transmit")
+            }
+//            if beacon.proximityUUID != self.region.proximityUUID && isBroadcasting {
+//                stopLocalBeacon()
+//                self.needToWait = false
+//                print("trying to turn off")
+//            }
+            if beacon.rssi > -60 {
+                print("ran cycle")
+                runThroughCycle(2)
+                beaconTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: #selector(ViewController.resetBeacon), userInfo: nil, repeats: false)
+            }
         }
-        if beacon.proximityUUID != self.region.proximityUUID && isBroadcasting {
-            stopLocalBeacon()
-            self.needToWait = false
-            print("trying to turn off")
-        }
-        if beacon.rssi > -60 {
-            print("ran cycle")
-            runThroughCycle(2)
-            beaconTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: #selector(ViewController.resetBeacon), userInfo: nil, repeats: false)
-        }
+//        if beacons.count == 0 && isBroadcasting {
+//            stopLocalBeacon()
+//            needToWait = false
+//            print("trying to turn off")
+//        }
     }
     
     func updateInterface(beacons: [CLBeacon]){
@@ -87,9 +95,9 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
     }
     
     func stopLocalBeacon() {
-        self.needToWait = true
-        peripheralManager.stopAdvertising()
+        needToWait = true
         isBroadcasting = false
+        peripheralManager.stopAdvertising()
         peripheralManager = nil
         beaconPeripheralData = nil
         localBeacon = nil
