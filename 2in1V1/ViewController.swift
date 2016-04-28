@@ -28,6 +28,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
     var beaconPeripheralData: NSDictionary!
     var peripheralManager: CBPeripheralManager!
     var isBroadcasting = false
+    var needToWait = false
     var beaconTimer: NSTimer!
     
     override func viewDidLoad() {
@@ -41,17 +42,18 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
         
         let beacon = beacons[0]
         updateInterface(beacons)
-        print(beacon.proximityUUID)
-        print("this is region", self.region.proximityUUID)
-        if beacon.proximityUUID == self.region.proximityUUID {
+        
+        if beacon.proximityUUID == self.region.proximityUUID && !isBroadcasting && !needToWait {
             transmitBeacon()
             print("trying to transmit")
         }
-        else if (self.isBroadcasting == true) {
+        if beacon.proximityUUID != self.region.proximityUUID && isBroadcasting {
             stopLocalBeacon()
+            self.needToWait = false
             print("trying to turn off")
         }
         if beacon.rssi > -60 {
+            print("ran cycle")
             runThroughCycle(2)
             beaconTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: #selector(ViewController.resetBeacon), userInfo: nil, repeats: false)
         }
@@ -71,23 +73,26 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
             stopLocalBeacon()
         }
         
+        print("initializing")
         let localBeaconUUID = "66dae67d-22e2-466b-b7d6-7093d52ceeb7"
         let localBeaconMajor: CLBeaconMajorValue = 8127
         let localBeaconMinor: CLBeaconMinorValue = UInt16(minorNum)
         
         let uuid = NSUUID(UUIDString: localBeaconUUID)!
         localBeacon = CLBeaconRegion(proximityUUID: uuid, major: localBeaconMajor, minor: localBeaconMinor, identifier: "MySmartDoor")
-        
+        isBroadcasting = true
         beaconPeripheralData = localBeacon.peripheralDataWithMeasuredPower(nil)
         peripheralManager = CBPeripheralManager(delegate: self, queue: nil, options: nil)
+        
     }
     
     func stopLocalBeacon() {
+        self.needToWait = true
         peripheralManager.stopAdvertising()
+        isBroadcasting = false
         peripheralManager = nil
         beaconPeripheralData = nil
         localBeacon = nil
-        isBroadcasting = false
     }
     
     func peripheralManagerDidUpdateState(peripheral: CBPeripheralManager) {
