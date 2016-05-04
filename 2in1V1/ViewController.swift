@@ -67,7 +67,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
 //        }
     }
     
-    func updateInterface(beacons: [CLBeacon]){
+    func updateInterface(beacons: [CLBeacon]!){
         let newBeacon = beacons[0]
         self.incomingUUID.text = "\(newBeacon.proximityUUID)"
         self.incomingMajor.text = "\(newBeacon.major)"
@@ -91,7 +91,6 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
         isBroadcasting = true
         beaconPeripheralData = localBeacon.peripheralDataWithMeasuredPower(nil)
         peripheralManager = CBPeripheralManager(delegate: self, queue: nil, options: nil)
-        
     }
     
     func stopLocalBeacon() {
@@ -106,10 +105,10 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
     func peripheralManagerDidUpdateState(peripheral: CBPeripheralManager) {
         if peripheral.state == .PoweredOn {
             peripheralManager.startAdvertising(beaconPeripheralData as! [String: AnyObject]!)
-            transmitting.text = "Yes!"
+            self.transmitting.text = "Yes!"
         } else if peripheral.state == .PoweredOff {
             peripheralManager.stopAdvertising()
-            transmitting.text = "No"
+            self.transmitting.text = "No"
         }
     }
     
@@ -151,5 +150,12 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
         runThroughCycle(2)
         beaconTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: #selector(ViewController.resetBeacon), userInfo: nil, repeats: false)
     }
+    @IBAction func stopBeaconOne(sender: AnyObject) {
+        stopLocalBeacon()
+        isBroadcasting = false
+        needToWait = false
+        updateOutgoingInterface(5)
+    }
+    
 }
 
