@@ -52,11 +52,11 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
             }
         }
         if beacons.count == 0 && isBroadcasting {
-            beaconTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: #selector(ViewController.stopBeaconOne), userInfo: nil, repeats: false)
+            beaconTimer = NSTimer.scheduledTimerWithTimeInterval(3, target: self, selector: #selector(ViewController.stopBeaconOne), userInfo: nil, repeats: false)
         }
     }
     
-    func updateInterface(beacons: [CLBeacon]!){
+    private func updateInterface(beacons: [CLBeacon]!){
         let newBeacon = beacons[0]
         self.incomingUUID.text = "\(newBeacon.proximityUUID)"
         self.incomingMajor.text = "\(newBeacon.major)"
@@ -65,7 +65,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
         
     }
 
-    func initLocalBeacon(minorNum : Int) {
+    private func initLocalBeacon(minorNum : Int) {
         if localBeacon != nil {
             stopLocalBeacon()
         }
@@ -81,7 +81,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
         peripheralManager = CBPeripheralManager(delegate: self, queue: nil, options: nil)
     }
     
-    func stopLocalBeacon() {
+    private func stopLocalBeacon() {
         needToWait = true
         isBroadcasting = false
         peripheralManager.stopAdvertising()
@@ -100,7 +100,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
         }
     }
     
-    func updateOutgoingInterface(minorNum: Int){
+    private func updateOutgoingInterface(minorNum: Int){
         if minorNum == 5 {
             self.outgoingUUID.text = "None"
             self.outgoingMajor.text = "None"
@@ -116,7 +116,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
         }
     }
     
-    func runThroughCycle(minorNum : Int) {
+    private func runThroughCycle(minorNum : Int) {
         stopLocalBeacon()
         initLocalBeacon(minorNum)
         isBroadcasting = true
@@ -127,7 +127,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
         runThroughCycle(1)
     }
     
-    func transmitBeacon() {
+    private func transmitBeacon() {
         if !isBroadcasting {
             initLocalBeacon(1)
             isBroadcasting = true
