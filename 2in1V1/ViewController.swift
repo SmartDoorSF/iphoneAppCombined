@@ -39,32 +39,20 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
     }
 
     func locationManager(manager: CLLocationManager, didRangeBeacons beacons: [CLBeacon], inRegion region: CLBeaconRegion) {
-        print("this is beacons", beacons)
-        print ("this is count", beacons.count)
         if beacons.count != 0 {
             let beacon = beacons[0]
             updateInterface(beacons)
-            print("beacon ID", beacon.proximityUUID)
-            print("isBroadcasting", isBroadcasting)
             
             if beacon.proximityUUID == self.region.proximityUUID && !isBroadcasting && !needToWait {
                 transmitBeacon()
-                print("trying to transmit")
             }
-//            if beacon.proximityUUID != self.region.proximityUUID && isBroadcasting {
-//                stopLocalBeacon()
-//                self.needToWait = false
-//                print("trying to turn off")
-//            }
-            if beacon.rssi > -60 {
-                print("ran cycle")
+            if beacon.rssi > -60 && beacon.rssi != 0 {
                 runThroughCycle(2)
                 beaconTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: #selector(ViewController.resetBeacon), userInfo: nil, repeats: false)
             }
         }
         if beacons.count == 0 && isBroadcasting {
             beaconTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: #selector(ViewController.stopBeaconOne), userInfo: nil, repeats: false)
-            print("trying to turn off", isBroadcasting)
         }
     }
     
@@ -79,11 +67,9 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
 
     func initLocalBeacon(minorNum : Int) {
         if localBeacon != nil {
-            print("why in here")
             stopLocalBeacon()
         }
         
-        print("initializing")
         let localBeaconUUID = "66dae67d-22e2-466b-b7d6-7093d52ceeb7"
         let localBeaconMajor: CLBeaconMajorValue = 8127
         let localBeaconMinor: CLBeaconMinorValue = UInt16(minorNum)
@@ -119,6 +105,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
             self.outgoingUUID.text = "None"
             self.outgoingMajor.text = "None"
             self.outgoingMinor.text = "5"
+            self.transmitting.text = "No"
         } else {
             let localBeaconUUID = "66dae67d-22e2-466b-b7d6-7093d52ceeb7"
             let localBeaconMajor: CLBeaconMajorValue = 8127
@@ -156,7 +143,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate, CBPeripheralM
         runThroughCycle(2)
         beaconTimer = NSTimer.scheduledTimerWithTimeInterval(5, target: self, selector: #selector(ViewController.resetBeacon), userInfo: nil, repeats: false)
     }
-    @IBAction func stopBeaconOne(sender: AnyObject) {
+    func stopBeaconOne(sender: AnyObject) {
         if isBroadcasting == true {
             stopLocalBeacon()
             isBroadcasting = false
